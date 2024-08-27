@@ -40,13 +40,10 @@ function isValidYouTubeUrl(url) {
       hostname === "youtu.be"
     ) {
       if (
-        (parsedUrl.pathname === "/watch" && parsedUrl.searchParams.has("v")) ||
-        (parsedUrl.pathname.startsWith("/playlist") &&
-          parsedUrl.searchParams.has("list")) ||
-        parsedUrl.pathname.startsWith("/channel") ||
-        parsedUrl.pathname.startsWith("/user") ||
-        parsedUrl.pathname.startsWith("/c") ||
-        hostname === "youtu.be"
+        hostname === "youtu.be" ||
+        (hostname.includes("youtube.com") &&
+          parsedUrl.pathname === "/watch" &&
+          parsedUrl.searchParams.has("v"))
       ) {
         return true;
       }
@@ -70,8 +67,9 @@ function generateKey() {
   return result;
 }
 
-function generateShortUrl(key) {
-  return `https://youtu.be/${key}`;
+function generateShortUrl(baseUrl, key) {
+  const url = new URL(baseUrl);
+  return `${url.origin}/${key}`;
 }
 
 function insertData(value) {
@@ -83,7 +81,7 @@ function insertData(value) {
     }
 
     const key = generateKey();
-    const shortUrl = generateShortUrl(key);
+    const shortUrl = generateShortUrl(value, key);
 
     const sql =
       "INSERT INTO URLShort (key, original_Url, short_Url) VALUES (?, ?, ?)";
@@ -106,7 +104,9 @@ function fetchData() {
         reject(err);
       } else {
         rows.forEach((row) => {
-          console.log(`${row.key}: ${row.original_Url} -> ${row.short_Url}`);
+          console.log(
+            `${row.key}: ${row.original_Url} -> http://localhost:3000/${row.key}`
+          );
         });
         resolve(rows);
       }
@@ -129,10 +129,8 @@ app.get("/:key", (req, res) => {
     }
   });
 });
-
-insertData("https://www.youtube.com/watch?v=Kd3vEwSZGuI");
+insertData("https://www.youtube.com/watch?v=86gMD2OLiUg");
 fetchData();
-
 app.listen(port, () => {
   console.log(`Serveur en cours d'exécution sur http://localhost:${port}`);
 });
