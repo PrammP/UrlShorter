@@ -33,7 +33,6 @@ async function fetchData() {
 function displayResult(data) {
   const resultDiv = document.getElementById("result");
   resultDiv.innerHTML = `
-    <p>URL originale: ${data.originalUrl}</p>
     <p>Lien raccourci: <a href="${data.shortUrl}" target="_blank">${data.shortUrl}</a></p>
   `;
 }

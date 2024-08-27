@@ -1,10 +1,9 @@
 const express = require("express");
 const sqlite3 = require("sqlite3").verbose();
-const bodyParser = require("body-parser"); // Ajout de body-parser
+const bodyParser = require("body-parser");
 const app = express();
 const port = 3000;
 
-// Connexion à la base de données
 const db = new sqlite3.Database("database.DB", (err) => {
   if (err) {
     console.error(
@@ -16,7 +15,6 @@ const db = new sqlite3.Database("database.DB", (err) => {
   }
 });
 
-// Création de la table si elle n'existe pas
 db.serialize(() => {
   db.run(
     `CREATE TABLE IF NOT EXISTS URLShort (
@@ -32,11 +30,9 @@ db.serialize(() => {
   );
 });
 
-// Middleware pour traiter les requêtes JSON et les fichiers statiques
 app.use(bodyParser.json());
 app.use(express.static("public"));
 
-// Fonction de validation des URL YouTube
 function isValidYouTubeUrl(url) {
   try {
     const parsedUrl = new URL(url);
@@ -62,7 +58,6 @@ function isValidYouTubeUrl(url) {
   }
 }
 
-// Génération de clé aléatoire
 function generateKey() {
   let result = "";
   const characters =
@@ -76,12 +71,10 @@ function generateKey() {
   return result;
 }
 
-// Génération de l'URL raccourcie
 function generateShortUrl(baseUrl, key) {
   return `http://localhost:3000/${key}`;
 }
 
-// Insertion de données dans la base
 function insertData(value) {
   return new Promise((resolve, reject) => {
     if (!isValidYouTubeUrl(value)) {
@@ -106,7 +99,6 @@ function insertData(value) {
   });
 }
 
-// Route POST pour insérer les données
 app.post("/insert", async (req, res) => {
   const { url } = req.body;
   try {
@@ -117,7 +109,6 @@ app.post("/insert", async (req, res) => {
   }
 });
 
-// Route GET pour gérer les URL raccourcies
 app.get("/:key", (req, res) => {
   const key = req.params.key;
 
