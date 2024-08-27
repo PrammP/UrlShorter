@@ -1,8 +1,10 @@
 const express = require("express");
 const sqlite3 = require("sqlite3").verbose();
+const bodyParser = require("body-parser"); // Ajout de body-parser
 const app = express();
 const port = 3000;
 
+// Connexion à la base de données
 const db = new sqlite3.Database("database.DB", (err) => {
   if (err) {
     console.error(
@@ -14,6 +16,7 @@ const db = new sqlite3.Database("database.DB", (err) => {
   }
 });
 
+// Création de la table si elle n'existe pas
 db.serialize(() => {
   db.run(
     `CREATE TABLE IF NOT EXISTS URLShort (
@@ -29,6 +32,11 @@ db.serialize(() => {
   );
 });
 
+// Middleware pour traiter les requêtes JSON et les fichiers statiques
+app.use(bodyParser.json());
+app.use(express.static("public"));
+
+// Fonction de validation des URL YouTube
 function isValidYouTubeUrl(url) {
   try {
     const parsedUrl = new URL(url);
@@ -54,6 +62,7 @@ function isValidYouTubeUrl(url) {
   }
 }
 
+// Génération de clé aléatoire
 function generateKey() {
   let result = "";
   const characters =
@@ -67,11 +76,12 @@ function generateKey() {
   return result;
 }
 
+// Génération de l'URL raccourcie
 function generateShortUrl(baseUrl, key) {
-  const url = new URL(baseUrl);
-  return `${url.origin}/${key}`;
+  return `http://localhost:3000/${key}`;
 }
 
+// Insertion de données dans la base
 function insertData(value) {
   return new Promise((resolve, reject) => {
     if (!isValidYouTubeUrl(value)) {
@@ -96,24 +106,18 @@ function insertData(value) {
   });
 }
 
-function fetchData() {
-  return new Promise((resolve, reject) => {
-    const sql = "SELECT key, original_Url, short_Url FROM URLShort";
-    db.all(sql, [], (err, rows) => {
-      if (err) {
-        reject(err);
-      } else {
-        rows.forEach((row) => {
-          console.log(
-            `${row.key}: ${row.original_Url} -> http://localhost:3000/${row.key}`
-          );
-        });
-        resolve(rows);
-      }
-    });
-  });
-}
+// Route POST pour insérer les données
+app.post("/insert", async (req, res) => {
+  const { url } = req.body;
+  try {
+    const data = await insertData(url);
+    res.json(data);
+  } catch (error) {
+    res.status(400).send(error.message);
+  }
+});
 
+// Route GET pour gérer les URL raccourcies
 app.get("/:key", (req, res) => {
   const key = req.params.key;
 
@@ -129,10 +133,9 @@ app.get("/:key", (req, res) => {
     }
   });
 });
-insertData("https://www.youtube.com/watch?v=86gMD2OLiUg");
-fetchData();
+
 app.listen(port, () => {
   console.log(`Serveur en cours d'exécution sur http://localhost:${port}`);
 });
 
-module.exports = { generateKey, insertData, fetchData, db, isValidYouTubeUrl };
+module.exports = { generateKey, insertData, db, isValidYouTubeUrl };
